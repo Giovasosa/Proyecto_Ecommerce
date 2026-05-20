@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingBag, Search, Menu } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import CartDrawer from './CartDrawer';
+import logo from '../assets/logo.jpg';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -17,7 +18,7 @@ const Navbar = () => {
               <Menu size={20} />
             </button>
             <Link to="/" className="logo">
-              KR <span>CASES</span>
+              <img src={logo} alt="KR Cases" className="logo-img" />
             </Link>
           </div>
 
