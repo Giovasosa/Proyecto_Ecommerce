@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/logo.jpg';
-import { Instagram, Facebook, Twitter } from 'lucide-react';
+import { AtSign, MessageCircle, Share2 } from 'lucide-react';
 import './Footer.css';
 
 const Footer = () => (
@@ -11,9 +11,9 @@ const Footer = () => (
         <img src={logo} alt="KR Cases" className="footer-logo" />
         <p>Fundas premium para smartphones de alta gama. Calidad y diseño sin compromiso.</p>
         <div className="social-links">
-          <a href="#" aria-label="Instagram"><Instagram size={18} /></a>
-          <a href="#" aria-label="Facebook"><Facebook size={18} /></a>
-          <a href="#" aria-label="Twitter"><Twitter size={18} /></a>
+          <a href="#" aria-label="Instagram"><AtSign size={18} /></a>
+          <a href="#" aria-label="Facebook"><Share2 size={18} /></a>
+          <a href="#" aria-label="WhatsApp"><MessageCircle size={18} /></a>
         </div>
       </div>
 
