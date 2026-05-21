@@ -25,8 +25,8 @@ const Navbar = () => {
           <div className="nav-center desktop-only">
             <ul className="nav-links">
               <li><Link to="/">Inicio</Link></li>
-              <li><Link to="/">Catálogo</Link></li>
-              <li><Link to="/">Colecciones</Link></li>
+              <li><Link to="/catalogo">Catálogo</Link></li>
+              <li><Link to="/catalogo">Colecciones</Link></li>
             </ul>
           </div>
 
