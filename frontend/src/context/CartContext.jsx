@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
+import { toast } from 'sonner';
 
 const CartContext = createContext();
 
@@ -21,6 +22,7 @@ export const CartProvider = ({ children }) => {
       return [...prev, { product, variant, quantity }];
     });
     setIsCartOpen(true);
+    toast.success(`${product.name} añadido al carrito`);
   };
 
   const removeFromCart = (variantId) => {

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Star, ChevronLeft, ShoppingBag, Shield, Truck, RotateCcw } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import case1Img from '../assets/case1.png';
+import PageTransition from '../components/PageTransition';
 import './ProductDetail.css';
 
 const mockProduct = {
@@ -69,6 +70,7 @@ const ProductDetail = () => {
   );
 
   return (
+    <PageTransition>
     <div className="product-detail-page">
       <div className="container">
         {/* Breadcrumb */}
@@ -192,6 +194,7 @@ const ProductDetail = () => {
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 };
 

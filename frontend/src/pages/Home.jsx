@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Shield, Truck, Star } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import PageTransition from '../components/PageTransition';
 import './Home.css';
 import case1Img from '../assets/case1.png';
 import case2Img from '../assets/case2.png';
@@ -51,8 +52,8 @@ const Home = () => {
   const images = [case1Img, case2Img, case1Img, case2Img];
 
   return (
-    <div className="home-page">
-
+    <PageTransition>
+      <div className="home-page">
       {/* ── HERO ── */}
       <section className="hero">
         <div className="container hero-content">
@@ -159,6 +160,7 @@ const Home = () => {
       </section>
 
     </div>
+    </PageTransition>
   );
 };
 

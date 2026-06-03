@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Filter, Grid, List, Search } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import PageTransition from '../components/PageTransition';
 import './Catalog.css';
 import case1Img from '../assets/case1.png';
 import case2Img from '../assets/case2.png';
@@ -48,6 +49,7 @@ const Catalog = () => {
   const images = [case1Img, case2Img, case1Img, case2Img, case1Img, case2Img];
 
   return (
+    <PageTransition>
     <div className="catalog-page">
       {/* Header */}
       <div className="catalog-header">
@@ -150,6 +152,7 @@ const Catalog = () => {
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 };
 
