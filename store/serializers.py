@@ -1,10 +1,14 @@
+from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Category, Product, ProductVariant, Coupon, Order, OrderItem, Review
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ['id', 'name', 'slug']
+
 
 class ProductVariantSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=10, decimal_places=0, read_only=True)
@@ -13,13 +17,16 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         model = ProductVariant
         fields = ['id', 'model_name', 'color', 'material', 'sku', 'stock', 'price']
 
+
 class ReviewSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.username', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
 
     class Meta:
         model = Review
-        fields = ['id', 'user', 'user_name', 'rating', 'comment', 'created_at']
-        read_only_fields = ['user']
+        fields = ['id', 'product', 'product_name', 'user', 'user_name', 'rating', 'comment', 'created_at']
+        read_only_fields = ['user', 'product_name']
+
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
@@ -37,6 +44,13 @@ class ProductSerializer(serializers.ModelSerializer):
             return sum(r.rating for r in reviews) / reviews.count()
         return 0
 
+
+class CouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Coupon
+        fields = ['id', 'code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'active']
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     product_variant = ProductVariantSerializer(read_only=True)
     product_variant_id = serializers.PrimaryKeyRelatedField(
@@ -48,25 +62,86 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'product_variant', 'product_variant_id', 'quantity', 'price_at_purchase']
         read_only_fields = ['price_at_purchase']
 
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     coupon_code = serializers.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address', 'status', 'total_amount', 'items', 'coupon_code']
-        read_only_fields = ['status', 'total_amount']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address', 'status', 'total_amount', 'coupon_code', 'items', 'created_at']
+        read_only_fields = ['status', 'total_amount', 'created_at']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         coupon_code = validated_data.pop('coupon_code', None)
-        
-        # Basic order creation without complex logic. 
-        # The view handles checkout calculation, stock verification and MP integration.
-        order = Order.objects.create(**validated_data)
-        
+        coupon = None
+
+        if coupon_code:
+            try:
+                coupon = Coupon.objects.get(
+                    code=coupon_code,
+                    active=True,
+                    valid_from__lte=timezone.now(),
+                    valid_to__gte=timezone.now(),
+                )
+            except Coupon.DoesNotExist:
+                raise serializers.ValidationError({'coupon_code': 'Cupón inválido o expirado'})
+
+        user = None
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            user = request.user
+
+        order = Order.objects.create(user=user, coupon=coupon, **validated_data)
+        total_amount = 0
+
         for item_data in items_data:
-            # We will populate price_at_purchase in the checkout view
-            OrderItem.objects.create(order=order, **item_data)
-            
+            variant = item_data['product_variant']
+            quantity = item_data['quantity']
+
+            if variant.stock < quantity:
+                raise serializers.ValidationError({'items': f'Stock insuficiente para {variant.product.name} ({variant.color})'})
+
+            price = variant.price
+            item_total = price * quantity
+            total_amount += item_total
+
+            OrderItem.objects.create(order=order, **item_data, price_at_purchase=price)
+
+        if coupon:
+            if coupon.discount_type == 'percentage':
+                total_amount -= (total_amount * coupon.discount_value / 100)
+            else:
+                total_amount -= coupon.discount_value
+            total_amount = max(total_amount, 0)
+
+        order.total_amount = total_amount
+        order.save()
         return order
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+    password2 = serializers.CharField(write_only=True, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'password', 'password2']
+
+    def validate(self, attrs):
+        if attrs.get('password') != attrs.get('password2'):
+            raise serializers.ValidationError({'password': 'Las contraseñas no coinciden'})
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('password2', None)
+        password = validated_data.pop('password')
+        user = User.objects.create_user(password=password, **validated_data)
+        return user
