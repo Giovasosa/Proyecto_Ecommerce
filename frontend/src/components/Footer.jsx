@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../assets/logo.jpg';
+import logo from '../assets/favicon-kr.png';
 import { AtSign, MessageCircle, Share2 } from 'lucide-react';
 import './Footer.css';
 
