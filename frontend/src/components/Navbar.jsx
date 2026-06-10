@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, Menu, User } from 'lucide-react';
+import { ShoppingBag, Search, User } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import CartDrawer from './CartDrawer';
@@ -27,9 +27,6 @@ const Navbar = () => {
       <nav className="navbar glass-panel">
         <div className="navbar-container container">
           <div className="nav-left">
-            <button className="btn-icon mobile-menu">
-              <Menu size={20} />
-            </button>
             <Link to="/" className="logo">
               <img src={logo} alt="KR Cases" className="logo-img" />
             </Link>
