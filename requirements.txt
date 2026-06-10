@@ -1,6 +1,6 @@
 Django>=6.0.5
 djangorestframework>=3.15.1
 django-cors-headers>=4.3.1
-mercadopago>=2.1.0
+django-filter>=24.2
 weasyprint>=61.2
 pillow>=10.3.0
