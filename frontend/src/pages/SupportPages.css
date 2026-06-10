@@ -1,0 +1,174 @@
+.support-page {
+  padding-top: 100px;
+  padding-bottom: 80px;
+  min-height: calc(100vh - 150px);
+}
+
+.support-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.support-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.support-header p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.support-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* FAQ Accordion */
+.faq-item {
+  margin-bottom: 15px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: var(--glass-bg);
+  overflow: hidden;
+  transition: var(--transition-smooth);
+}
+
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.faq-icon {
+  transition: transform 0.3s ease;
+  color: var(--text-secondary);
+}
+
+.faq-icon.open {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  padding: 0 25px;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-out;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.faq-answer.open {
+  padding: 0 25px 25px 25px;
+  max-height: 500px;
+}
+
+/* Legal/Returns Text */
+.legal-text h2 {
+  font-size: 1.5rem;
+  margin: 30px 0 15px;
+  color: var(--text-primary);
+}
+
+.legal-text p {
+  margin-bottom: 15px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.legal-text ul {
+  margin-bottom: 20px;
+  padding-left: 20px;
+  color: var(--text-secondary);
+}
+
+.legal-text li {
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+/* Contact Grid */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 40px;
+}
+
+@media (max-width: 768px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.contact-card {
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  text-align: center;
+}
+
+.contact-card .icon {
+  margin-bottom: 15px;
+  display: inline-flex;
+  padding: 15px;
+  background: #0a0a0a;
+  color: #fff;
+  border-radius: 50%;
+}
+
+.contact-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.contact-card p, .contact-card a {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.contact-card a:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.contact-form {
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+}
+
+.contact-form textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  min-height: 150px;
+  resize: vertical;
+  transition: var(--transition-smooth);
+}
+
+.contact-form textarea:focus {
+  outline: none;
+  border-color: var(--text-primary);
+}

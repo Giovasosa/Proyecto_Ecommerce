@@ -7,6 +7,9 @@ import ProductDetail from './pages/ProductDetail';
 import NotFound from './pages/NotFound';
 import Checkout from './pages/Checkout';
 import Auth from './pages/Auth';
+import FAQ from './pages/FAQ';
+import Returns from './pages/Returns';
+import Contact from './pages/Contact';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
@@ -25,6 +28,9 @@ function App() {
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route path="/devoluciones" element={<Returns />} />
+                <Route path="/contacto" element={<Contact />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

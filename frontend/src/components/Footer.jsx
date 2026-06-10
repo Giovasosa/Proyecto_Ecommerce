@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../assets/favicon-kr.png';
+import logo from '../assets/logo.png';
 import { AtSign, MessageCircle, Share2 } from 'lucide-react';
 import './Footer.css';
 
@@ -29,9 +29,9 @@ const Footer = () => (
       <div className="footer-col">
         <h4>Soporte</h4>
         <ul>
-          <li><a href="#">Preguntas frecuentes</a></li>
-          <li><a href="#">Política de devoluciones</a></li>
-          <li><a href="#">Contacto</a></li>
+          <li><Link to="/faq">Preguntas frecuentes</Link></li>
+          <li><Link to="/devoluciones">Política de devoluciones</Link></li>
+          <li><Link to="/contacto">Contacto</Link></li>
         </ul>
       </div>
 
@@ -40,7 +40,7 @@ const Footer = () => (
         <ul>
           <li><span>Asunción, Paraguay</span></li>
           <li><a href="mailto:info@krcases.com">info@krcases.com</a></li>
-          <li><a href="https://wa.me/595981000000">WhatsApp</a></li>
+          <li><a href="https://wa.me/595991597314">WhatsApp</a></li>
         </ul>
       </div>
     </div>
