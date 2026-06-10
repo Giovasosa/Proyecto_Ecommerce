@@ -6,6 +6,8 @@ import PageTransition from '../components/PageTransition';
 import './Catalog.css';
 import case1Img from '../assets/case1.png';
 import case2Img from '../assets/case2.png';
+import case3Img from '../assets/case3.png';
+import case4Img from '../assets/case4.png';
 
 const mockProducts = [
   { id: 1, name: "Obsidian Dark Silicone", base_price: "120000", category: { name: "Silicone Premium" }, variants: [{ id: 101, model_name: "iPhone 15 Pro", color: "Dark Black", price: 120000, stock: 10 }] },
@@ -46,7 +48,7 @@ const Catalog = () => {
     setFiltered(result);
   }, [products, activeCategory, search, sortBy]);
 
-  const images = [case1Img, case2Img, case1Img, case2Img, case1Img, case2Img];
+  const images = [case1Img, case2Img, case3Img, case4Img, case1Img, case2Img];
 
   return (
     <PageTransition>

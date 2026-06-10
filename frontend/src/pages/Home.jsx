@@ -6,6 +6,8 @@ import PageTransition from '../components/PageTransition';
 import './Home.css';
 import case1Img from '../assets/case1.png';
 import case2Img from '../assets/case2.png';
+import case3Img from '../assets/case3.png';
+import case4Img from '../assets/case4.png';
 import heroImg from '../assets/hero.png';
 
 const mockProducts = [
@@ -37,6 +39,20 @@ const mockProducts = [
     category: { name: "Leather Premium" },
     variants: [{ id: 104, model_name: "iPhone 15", color: "Black", price: 180000, stock: 3 }]
   },
+  {
+    id: 5,
+    name: "Aero Carbon Shell",
+    base_price: "160000",
+    category: { name: "Carbon Series" },
+    variants: [{ id: 105, model_name: "iPhone 15 Pro", color: "Carbon Black", price: 160000, stock: 15 }]
+  },
+  {
+    id: 6,
+    name: "Heritage Leather Cover",
+    base_price: "190000",
+    category: { name: "Leather Premium" },
+    variants: [{ id: 106, model_name: "Samsung S24 Ultra", color: "Vintage Brown", price: 190000, stock: 4 }]
+  }
 ];
 
 const Home = () => {
@@ -49,7 +65,7 @@ const Home = () => {
       .catch(() => {});
   }, []);
 
-  const images = [case1Img, case2Img, case1Img, case2Img];
+  const images = [case1Img, case2Img, case3Img, case4Img, case1Img, case2Img];
 
   return (
     <PageTransition>
