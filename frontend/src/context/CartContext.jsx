@@ -31,12 +31,14 @@ export const CartProvider = ({ children }) => {
 
   const toggleCart = () => setIsCartOpen(!isCartOpen);
 
+  const clearCart = () => setCartItems([]);
+
   const cartTotal = cartItems.reduce((total, item) => total + (item.variant.price * item.quantity), 0);
   const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
   return (
     <CartContext.Provider value={{ 
-      cartItems, addToCart, removeFromCart, 
+      cartItems, addToCart, removeFromCart, clearCart,
       isCartOpen, toggleCart, cartTotal, cartCount 
     }}>
       {children}

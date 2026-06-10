@@ -1,13 +1,26 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingBag, Search, Menu } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingBag, Search, Menu, User } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import CartDrawer from './CartDrawer';
-import logo from '../assets/logo.jpg';
+import logo from '../assets/logo.png';
 import './Navbar.css';
 
 const Navbar = () => {
   const { cartCount, toggleCart } = useCart();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleUserClick = () => {
+    if (user) {
+      if (window.confirm('¿Deseas cerrar sesión?')) {
+        logout();
+      }
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
     <>
@@ -26,15 +39,18 @@ const Navbar = () => {
             <ul className="nav-links">
               <li><Link to="/">Inicio</Link></li>
               <li><Link to="/catalogo">Catálogo</Link></li>
-              <li><Link to="/catalogo">Colecciones</Link></li>
+
             </ul>
           </div>
 
           <div className="nav-right">
-            <button className="btn-icon desktop-only">
+            <button className="btn-icon" aria-label="Search">
               <Search size={20} />
             </button>
-            <button className="btn-icon cart-btn" onClick={toggleCart}>
+            <button className="btn-icon" aria-label="User" onClick={handleUserClick} title={user ? user.username : 'Iniciar sesión'}>
+              <User size={20} />
+            </button>
+            <button className="btn-icon cart-btn" onClick={toggleCart} aria-label="Cart">
               <ShoppingBag size={20} />
               {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
             </button>
