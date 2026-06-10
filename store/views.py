@@ -3,10 +3,10 @@ from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
 from rest_framework import viewsets, status, filters, generics, permissions
-from rest_framework.authtoken.models import Token
-from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import mercadopago
 
 from .models import Category, Product, ProductVariant, Review, Coupon, Order, OrderItem
@@ -22,7 +22,14 @@ from .serializers import (
 )
 
 
+# Estas vistas controlan la API del backend de e-commerce.
+# Aquí tenemos endpoints de productos, categorías, reseñas, cupones, órdenes y autenticación.
 class IsOwnerOrReadOnly(permissions.BasePermission):
+    """Permisos personalizados para que solo el dueño pueda editar su propio recurso."""
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return getattr(obj, 'user', None) == request.user
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -30,12 +37,14 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """Lista y muestra categorías disponibles para el frontend."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    """Lista y filtra productos, con búsqueda y ordenación simple."""
     queryset = Product.objects.prefetch_related('variants', 'reviews').all()
     serializer_class = ProductSerializer
     permission_classes = [permissions.AllowAny]
@@ -48,6 +57,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = super().get_queryset()
         category_slug = self.request.query_params.get('category')
         if category_slug:
+            # Si viene el parámetro category, solo mostramos productos de esa categoría.
             queryset = queryset.filter(category__slug=category_slug)
         return queryset
 
@@ -92,16 +102,23 @@ class RegisterAPIView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
 
 
-class CustomAuthToken(ObtainAuthToken):
+class CustomAuthToken(TokenObtainPairView):
+    """Endpoint de login que devuelve access y refresh tokens JWT con datos del usuario."""
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user': UserSerializer(user).data,
-        })
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            try:
+                username = request.data.get('username')
+                user = User.objects.get(username=username)
+                response.data['user'] = UserSerializer(user).data
+            except User.DoesNotExist:
+                pass
+        return response
+
+
+class TokenRefreshAPIView(TokenRefreshView):
+    """Endpoint para refrescar el access token usando el refresh token."""
+    pass
 
 
 class UserDetailAPIView(APIView):

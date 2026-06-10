@@ -1,5 +1,6 @@
 Django>=6.0.5
 djangorestframework>=3.15.1
+djangorestframework-simplejwt>=5.3.0
 django-cors-headers>=4.3.1
 mercadopago>=2.1.0
 weasyprint>=61.2
