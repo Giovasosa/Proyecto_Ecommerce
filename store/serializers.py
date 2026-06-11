@@ -5,12 +5,14 @@ from .models import Category, Product, ProductVariant, Coupon, Order, OrderItem,
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Serializa categorías para mostrar en el frontend."""
     class Meta:
         model = Category
         fields = ['id', 'name', 'slug']
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
+    # El precio puede venir de price_override o del precio base del producto.
     price = serializers.DecimalField(max_digits=10, decimal_places=0, read_only=True)
 
     class Meta:
@@ -19,6 +21,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    # Mostramos nombre de usuario y nombre del producto para facilitar la UI.
     user_name = serializers.CharField(source='user.username', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
 
@@ -64,6 +67,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    # El cliente envía los items y un cupón opcional para crear la orden.
     items = OrderItemSerializer(many=True)
     coupon_code = serializers.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
 
@@ -88,6 +92,7 @@ class OrderSerializer(serializers.ModelSerializer):
             except Coupon.DoesNotExist:
                 raise serializers.ValidationError({'coupon_code': 'Cupón inválido o expirado'})
 
+        # Guardar la orden con usuario autenticado si existe.
         user = None
         request = self.context.get('request')
         if request and request.user.is_authenticated:
@@ -107,6 +112,7 @@ class OrderSerializer(serializers.ModelSerializer):
             item_total = price * quantity
             total_amount += item_total
 
+            # Guardar el precio actual en el momento de la compra.
             OrderItem.objects.create(order=order, **item_data, price_at_purchase=price)
 
         if coupon:
