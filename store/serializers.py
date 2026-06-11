@@ -1,29 +1,19 @@
+from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework import serializers
 from django.db.models import Avg, Count, Q
 from .models import Category, Product, ProductVariant, Coupon, Order, OrderItem, Review
 
 
-# =============================================================================
-# Category Serializers
-# =============================================================================
-
 class CategorySerializer(serializers.ModelSerializer):
-    product_count = serializers.SerializerMethodField()
-
+    """Serializa categorías para mostrar en el frontend."""
     class Meta:
         model = Category
-        fields = ['id', 'name', 'slug', 'product_count']
+        fields = ['id', 'name', 'slug']
 
-    def get_product_count(self, obj):
-        return obj.products.filter(is_active=True).count()
-
-
-# =============================================================================
-# ProductVariant Serializers
-# =============================================================================
 
 class ProductVariantSerializer(serializers.ModelSerializer):
-    """Serializer de lectura para variantes de producto."""
+    # El precio puede venir de price_override o del precio base del producto.
     price = serializers.DecimalField(max_digits=10, decimal_places=0, read_only=True)
 
     class Meta:
@@ -46,13 +36,17 @@ class ProductVariantWriteSerializer(serializers.ModelSerializer):
 # Review Serializers
 # =============================================================================
 
+
 class ReviewSerializer(serializers.ModelSerializer):
+    # Mostramos nombre de usuario y nombre del producto para facilitar la UI.
     user_name = serializers.CharField(source='user.username', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
 
     class Meta:
         model = Review
-        fields = ['id', 'product', 'user', 'user_name', 'rating', 'comment', 'created_at']
-        read_only_fields = ['user']
+        fields = ['id', 'product', 'product_name', 'user', 'user_name', 'rating', 'comment', 'created_at']
+        read_only_fields = ['user', 'product_name']
+
 
     def validate(self, data):
         """Valida que el usuario haya comprado el producto antes de dejar reseña."""
@@ -207,6 +201,13 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 # Order Serializers
 # =============================================================================
 
+
+class CouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Coupon
+        fields = ['id', 'code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'active']
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     product_variant = ProductVariantSerializer(read_only=True)
     product_variant_id = serializers.PrimaryKeyRelatedField(
@@ -220,89 +221,87 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    """Serializer principal para crear órdenes (usado por checkout)."""
+    # El cliente envía los items y un cupón opcional para crear la orden.
     items = OrderItemSerializer(many=True)
     coupon_code = serializers.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address',
-                  'status', 'total_amount', 'payment_method', 'items', 'coupon_code']
-        read_only_fields = ['status', 'total_amount']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address', 'status', 'total_amount', 'coupon_code', 'items', 'created_at']
+        read_only_fields = ['status', 'total_amount', 'created_at']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         coupon_code = validated_data.pop('coupon_code', None)
+        coupon = None
 
-        # Basic order creation without complex logic.
-        # The view handles checkout calculation, stock verification and MP integration.
-        order = Order.objects.create(**validated_data)
+        if coupon_code:
+            try:
+                coupon = Coupon.objects.get(
+                    code=coupon_code,
+                    active=True,
+                    valid_from__lte=timezone.now(),
+                    valid_to__gte=timezone.now(),
+                )
+            except Coupon.DoesNotExist:
+                raise serializers.ValidationError({'coupon_code': 'Cupón inválido o expirado'})
+
+        # Guardar la orden con usuario autenticado si existe.
+        user = None
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            user = request.user
+
+        order = Order.objects.create(user=user, coupon=coupon, **validated_data)
+        total_amount = 0
 
         for item_data in items_data:
-            # We will populate price_at_purchase in the checkout view
-            OrderItem.objects.create(order=order, **item_data)
+            variant = item_data['product_variant']
+            quantity = item_data['quantity']
 
+            if variant.stock < quantity:
+                raise serializers.ValidationError({'items': f'Stock insuficiente para {variant.product.name} ({variant.color})'})
+
+            price = variant.price
+            item_total = price * quantity
+            total_amount += item_total
+
+            # Guardar el precio actual en el momento de la compra.
+            OrderItem.objects.create(order=order, **item_data, price_at_purchase=price)
+
+        if coupon:
+            if coupon.discount_type == 'percentage':
+                total_amount -= (total_amount * coupon.discount_value / 100)
+            else:
+                total_amount -= coupon.discount_value
+            total_amount = max(total_amount, 0)
+
+        order.total_amount = total_amount
+        order.save()
         return order
 
 
-class OrderListSerializer(serializers.ModelSerializer):
-    """Serializer resumido para listado de órdenes."""
-    items_count = serializers.SerializerMethodField()
-    user_name = serializers.SerializerMethodField()
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+    password2 = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
-        model = Order
-        fields = ['id', 'user_name', 'first_name', 'last_name', 'email',
-                  'status', 'total_amount', 'payment_method', 'items_count',
-                  'tracking_number', 'created_at', 'updated_at']
+        model = User
+        fields = ['id', 'username', 'email', 'password', 'password2']
 
-    def get_items_count(self, obj):
-        return obj.items.count()
+    def validate(self, attrs):
+        if attrs.get('password') != attrs.get('password2'):
+            raise serializers.ValidationError({'password': 'Las contraseñas no coinciden'})
+        return attrs
 
-    def get_user_name(self, obj):
-        return obj.user.username if obj.user else 'Anónimo'
-
-
-class OrderDetailSerializer(serializers.ModelSerializer):
-    """Serializer detallado para una orden individual con items expandidos."""
-    items = OrderItemSerializer(many=True, read_only=True)
-    user_name = serializers.SerializerMethodField()
-    coupon_code = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Order
-        fields = ['id', 'user', 'user_name', 'first_name', 'last_name', 'email',
-                  'phone', 'address', 'notes', 'tracking_number',
-                  'status', 'total_amount', 'coupon', 'coupon_code',
-                  'payment_method', 'items', 'created_at', 'updated_at']
-        read_only_fields = ['user', 'total_amount', 'coupon', 'payment_method',
-                            'created_at', 'updated_at']
-
-    def get_user_name(self, obj):
-        return obj.user.username if obj.user else 'Anónimo'
-
-    def get_coupon_code(self, obj):
-        return obj.coupon.code if obj.coupon else None
-
-
-class OrderStatusUpdateSerializer(serializers.ModelSerializer):
-    """Serializer para que el admin actualice el estado y tracking de una orden."""
-
-    class Meta:
-        model = Order
-        fields = ['status', 'tracking_number', 'notes']
-
-    def validate_status(self, value):
-        valid_transitions = {
-            'PENDING': ['PAID', 'CANCELLED'],
-            'PAID': ['SHIPPED', 'CANCELLED'],
-            'SHIPPED': [],
-            'CANCELLED': [],
-        }
-        current_status = self.instance.status
-        if value not in valid_transitions.get(current_status, []):
-            raise serializers.ValidationError(
-                f"No se puede cambiar de '{current_status}' a '{value}'. "
-                f"Transiciones válidas: {valid_transitions.get(current_status, [])}"
-            )
-        return value
+    def create(self, validated_data):
+        validated_data.pop('password2', None)
+        password = validated_data.pop('password')
+        user = User.objects.create_user(password=password, **validated_data)
+        return user
