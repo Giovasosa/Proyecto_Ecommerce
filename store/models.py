@@ -15,6 +15,8 @@ class Product(models.Model):
     slug = models.SlugField(unique=True)
     description = models.TextField()
     base_price = models.DecimalField(max_digits=10, decimal_places=0, help_text="Precio base en Guaraníes")
+    image = models.ImageField(upload_to='products/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -29,6 +31,7 @@ class ProductVariant(models.Model):
     sku = models.CharField(max_length=100, unique=True)
     stock = models.PositiveIntegerField(default=0)
     price_override = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, help_text="Dejar en blanco para usar el precio base del producto")
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.product.name} - {self.model_name} ({self.color})"
@@ -65,12 +68,18 @@ class Order(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     address = models.TextField()
+    notes = models.TextField(blank=True, default='', help_text="Notas internas del administrador")
+    tracking_number = models.CharField(max_length=100, blank=True, default='', help_text="Número de seguimiento del envío")
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     total_amount = models.DecimalField(max_digits=10, decimal_places=0, default=0)
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True)
     
-    mercadopago_payment_id = models.CharField(max_length=100, null=True, blank=True)
+    PAYMENT_METHOD_CHOICES = (
+        ('TRANSFER', 'Transferencia Bancaria'),
+        ('CASH', 'Efectivo'),
+    )
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='TRANSFER')
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
