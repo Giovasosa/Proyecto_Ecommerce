@@ -80,3 +80,26 @@
     display: none;
   }
 }
+
+.nav-search {
+  display: flex;
+  align-items: center;
+  border-radius: 20px;
+  background-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.nav-search.open {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  padding-left: 15px;
+}
+
+.nav-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 150px;
+  font-size: 14px;
+  color: var(--text-primary);
+}

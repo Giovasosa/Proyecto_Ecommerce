@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Filter, Grid, List, Search } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import PageTransition from '../components/PageTransition';
@@ -12,11 +12,12 @@ import case4Img from '../assets/case4.png';
 const CATEGORIES = ['Todos', 'Silicone Premium', 'Transparent Series', 'Matte Series', 'Leather Premium', 'Armor Series'];
 
 const Catalog = () => {
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('Todos');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(location.state?.searchQuery || '');
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('default');
 

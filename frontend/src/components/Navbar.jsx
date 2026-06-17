@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, User } from 'lucide-react';
+import { ShoppingBag, Search, User, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import CartDrawer from './CartDrawer';
@@ -11,6 +11,16 @@ const Navbar = () => {
   const { cartCount, toggleCart } = useCart();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter' && searchQuery.trim() !== '') {
+      navigate('/catalogo', { state: { searchQuery } });
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
 
   const handleUserClick = () => {
     if (user) {
@@ -41,9 +51,25 @@ const Navbar = () => {
           </div>
 
           <div className="nav-right">
-            <button className="btn-icon" aria-label="Search">
-              <Search size={20} />
-            </button>
+            <div className={`nav-search ${isSearchOpen ? 'open' : ''}`}>
+              {isSearchOpen && (
+                <input 
+                  type="text" 
+                  placeholder="Buscar fundas..." 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearchSubmit}
+                  autoFocus
+                />
+              )}
+              <button 
+                className="btn-icon" 
+                aria-label="Search" 
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+              >
+                {isSearchOpen ? <X size={20} /> : <Search size={20} />}
+              </button>
+            </div>
             <button className="btn-icon" aria-label="User" onClick={handleUserClick} title={user ? user.username : 'Iniciar sesión'}>
               <User size={20} />
             </button>
