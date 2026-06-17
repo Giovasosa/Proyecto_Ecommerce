@@ -69,8 +69,8 @@ const Checkout = () => {
 
       if (response.ok) {
         toast.success("¡Pedido recibido con éxito! Nos pondremos en contacto contigo pronto.");
-        clearCart();
-        navigate('/');
+        // clearCart() will be called in ThankYou page to prevent conflicting redirects
+        navigate('/gracias', { state: { orderId: data.order_id } });
       } else {
         toast.error("Error: " + (data.error || "Hubo un problema procesando tu orden"));
         console.error("Error backend:", data);

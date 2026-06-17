@@ -150,3 +150,6 @@ CORS_ALLOW_ALL_ORIGINS = True # Change in production!
 
 # MercadoPago Integration
 MERCADOPAGO_ACCESS_TOKEN = 'TEST-YOUR-ACCESS-TOKEN-HERE'
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -4,6 +4,7 @@ from django.db.models import Sum, Count, Avg, F, Q
 from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
 from django.utils import timezone
 from django.conf import settings
+from django.core.mail import send_mail
 
 from rest_framework import viewsets, status, filters, generics
 from rest_framework.response import Response
@@ -216,32 +217,59 @@ class CheckoutAPIView(APIView):
                     order.total_amount = total_amount
                     order.save()
 
-                    # Integración con MercadoPago (opcional)
-                    sdk = mercadopago.SDK(getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', 'TEST-TOKEN-AQUI'))
-                    preference_data = {
-                        'items': mp_items,
-                        'payer': {
-                            'name': order.first_name,
-                            'surname': order.last_name,
-                            'email': order.email,
-                        },
-                        'external_reference': str(order.id),
-                        'back_urls': {
-                            'success': 'http://localhost:3000/success',
-                            'failure': 'http://localhost:3000/failure',
-                            'pending': 'http://localhost:3000/pending',
-                        },
-                        'auto_return': 'approved',
-                    }
-                    preference_response = sdk.preference().create(preference_data)
-                    if preference_response.get('status') not in (201, '201'):
-                        raise Exception('Error al crear preferencia en MercadoPago')
+                    # --- Enviar correo de confirmación ---
+                    email_subject = f'Confirmacion de Pedido #{order.id} - KR Cases'
+                    email_body = f'Hola {order.first_name},\n\n'
+                    email_body += f'¡Gracias por tu compra en KR Cases!\n\n'
+                    email_body += f'Detalles de tu pedido (Referencia #{order.id}):\n'
+                    for item in order.items.all():
+                        email_body += f'- {item.quantity}x {item.product_variant.product.name} ({item.product_variant.color}): Gs. {item.price_at_purchase * item.quantity:,.0f}\n'
+                    email_body += f'\nTotal: Gs. {order.total_amount:,.0f}\n'
+                    email_body += f'Direccion de envio: {order.address}\n\n'
+                    email_body += 'Nos pondremos en contacto contigo muy pronto para coordinar la entrega.\n\nSaludos,\nEl equipo de KR Cases'
+                    
+                    try:
+                        send_mail(
+                            email_subject,
+                            email_body,
+                            'ventas@krcases.com',
+                            [order.email],
+                            fail_silently=True,
+                        )
+                    except Exception as e:
+                        print(f"Error enviando correo: {e}")
+                    # ------------------------------------
 
-                    preference = preference_response.get('response', {})
+                    # Integración con MercadoPago (opcional)
+                    init_point = None
+                    try:
+                        sdk = mercadopago.SDK(getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', 'TEST-TOKEN-AQUI'))
+                        preference_data = {
+                            'items': mp_items,
+                            'payer': {
+                                'name': order.first_name,
+                                'surname': order.last_name,
+                                'email': order.email,
+                            },
+                            'external_reference': str(order.id),
+                            'back_urls': {
+                                'success': 'http://localhost:5173/success',
+                                'failure': 'http://localhost:5173/failure',
+                                'pending': 'http://localhost:5173/pending',
+                            },
+                            'auto_return': 'approved',
+                        }
+                        preference_response = sdk.preference().create(preference_data)
+                        if preference_response.get('status') in (201, '201'):
+                            preference = preference_response.get('response', {})
+                            init_point = preference.get('init_point')
+                    except Exception as mp_err:
+                        print(f"MercadoPago no configurado o error: {mp_err}")
+
                     return Response({
                         'order_id': order.id,
-                        'init_point': preference.get('init_point'),
-                        'sandbox_init_point': preference.get('sandbox_init_point', ''),
+                        'init_point': init_point,
+                        'message': 'Pedido recibido con éxito (Pago contra entrega)'
                     }, status=status.HTTP_201_CREATED)
             except ValueError as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
