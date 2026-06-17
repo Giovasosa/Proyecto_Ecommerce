@@ -6,31 +6,13 @@ import case1Img from '../assets/case1.png';
 import PageTransition from '../components/PageTransition';
 import './ProductDetail.css';
 
-const mockProduct = {
-  id: 1,
-  name: "Obsidian Dark Silicone",
-  description: "La funda definitiva para proteger tu smartphone con un estilo sobrio y elegante. Material de silicona líquida premium que ofrece un agarre perfecto y protección contra caídas extremas. Compatible con carga inalámbrica. Bordes elevados para proteger pantalla y cámara.",
-  base_price: "120000",
-  category: { name: "Silicone Premium" },
-  average_rating: 4.5,
-  variants: [
-    { id: 101, model_name: "iPhone 15 Pro", color: "Dark Black", material: "Silicona Líquida", stock: 15, price: 120000 },
-    { id: 102, model_name: "iPhone 15 Pro Max", color: "Midnight Black", material: "Silicona Líquida", stock: 0, price: 125000 },
-    { id: 103, model_name: "iPhone 15", color: "Dark Black", material: "Silicona Líquida", stock: 6, price: 115000 },
-    { id: 104, model_name: "iPhone 14 Pro", color: "Dark Black", material: "Silicona Líquida", stock: 9, price: 110000 },
-  ],
-  reviews: [
-    { id: 1, user_name: "Carlos M.", rating: 5, comment: "Excelente calidad, muy recomendada. El material es premium y se siente muy sólida.", created_at: "2025-03-01" },
-    { id: 2, user_name: "Laura G.", rating: 4, comment: "Muy linda, llegó rápido y bien embalada. El color es exactamente como se ve en la foto.", created_at: "2025-03-15" },
-  ]
-};
-
 const ProductDetail = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
@@ -42,8 +24,7 @@ const ProductDetail = () => {
         setLoading(false);
       })
       .catch(() => {
-        setProduct(mockProduct);
-        setSelectedVariant(mockProduct.variants[0]);
+        setError(true);
         setLoading(false);
       });
   }, [id]);
@@ -62,10 +43,10 @@ const ProductDetail = () => {
     </div>
   );
 
-  if (!product) return (
-    <div className="container" style={{ paddingTop: '100px' }}>
-      <p>Producto no encontrado.</p>
-      <Link to="/" className="btn-secondary" style={{ marginTop: 16 }}>Volver al inicio</Link>
+  if (error || !product) return (
+    <div className="container" style={{ paddingTop: '100px', textAlign: 'center' }}>
+      <p>Producto no encontrado o error de conexión.</p>
+      <Link to="/catalogo" className="btn-secondary" style={{ marginTop: 16, display: 'inline-block' }}>Volver al catálogo</Link>
     </div>
   );
 
@@ -84,7 +65,7 @@ const ProductDetail = () => {
           {/* IMAGE */}
           <div className="product-image-section">
             <div className="product-image-large">
-              <img src={case1Img} alt={product.name} />
+              <img src={product.image || case1Img} alt={product.name} />
             </div>
             <div className="product-badges">
               <span className="badge"><Shield size={14} /> Protección garantizada</span>

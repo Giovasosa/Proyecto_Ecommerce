@@ -9,20 +9,12 @@ import case2Img from '../assets/case2.png';
 import case3Img from '../assets/case3.png';
 import case4Img from '../assets/case4.png';
 
-const mockProducts = [
-  { id: 1, name: "Obsidian Dark Silicone", base_price: "120000", category: { name: "Silicone Premium" }, variants: [{ id: 101, model_name: "iPhone 15 Pro", color: "Dark Black", price: 120000, stock: 10 }] },
-  { id: 2, name: "Crystal Titanium Clear", base_price: "150000", category: { name: "Transparent Series" }, variants: [{ id: 102, model_name: "iPhone 15 Pro Max", color: "Clear", price: 150000, stock: 5 }] },
-  { id: 3, name: "Matte Black Edition", base_price: "135000", category: { name: "Matte Series" }, variants: [{ id: 103, model_name: "Samsung S24 Ultra", color: "Matte Black", price: 135000, stock: 8 }] },
-  { id: 4, name: "Urban Leather Case", base_price: "180000", category: { name: "Leather Premium" }, variants: [{ id: 104, model_name: "iPhone 15", color: "Black", price: 180000, stock: 3 }] },
-  { id: 5, name: "Shadow Flex Armor", base_price: "110000", category: { name: "Armor Series" }, variants: [{ id: 105, model_name: "Samsung A54", color: "Black", price: 110000, stock: 12 }] },
-  { id: 6, name: "Minimal Frost Case", base_price: "95000", category: { name: "Transparent Series" }, variants: [{ id: 106, model_name: "iPhone 14", color: "Frost White", price: 95000, stock: 7 }] },
-];
-
 const CATEGORIES = ['Todos', 'Silicone Premium', 'Transparent Series', 'Matte Series', 'Leather Premium', 'Armor Series'];
 
 const Catalog = () => {
-  const [products, setProducts] = useState(mockProducts);
-  const [filtered, setFiltered] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState('grid');
@@ -31,8 +23,14 @@ const Catalog = () => {
   useEffect(() => {
     fetch('http://127.0.0.1:8000/api/products/')
       .then(res => res.json())
-      .then(data => { if (data && data.length > 0) setProducts(data); })
-      .catch(() => {});
+      .then(data => { 
+        if (data && data.length > 0) {
+          setProducts(data);
+          setFiltered(data);
+        }
+        setLoading(false);
+      })
+      .catch(() => { setLoading(false); });
   }, []);
 
   useEffect(() => {
@@ -48,7 +46,7 @@ const Catalog = () => {
     setFiltered(result);
   }, [products, activeCategory, search, sortBy]);
 
-  const images = [case1Img, case2Img, case3Img, case4Img, case1Img, case2Img];
+  const localImages = [case1Img, case2Img, case3Img, case4Img, case1Img, case2Img];
 
   return (
     <PageTransition>
@@ -133,7 +131,11 @@ const Catalog = () => {
           </div>
 
           {/* Products */}
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="no-results">
+              <p>Cargando productos...</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="no-results">
               <p>No se encontraron productos con esos filtros.</p>
               <button className="btn-secondary" onClick={() => { setActiveCategory('Todos'); setSearch(''); }}>
@@ -146,7 +148,7 @@ const Catalog = () => {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  image={images[index % images.length]}
+                  image={product.image || localImages[index % localImages.length]}
                 />
               ))}
             </div>

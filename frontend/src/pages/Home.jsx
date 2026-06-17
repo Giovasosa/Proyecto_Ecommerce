@@ -10,62 +10,21 @@ import case3Img from '../assets/case3.png';
 import case4Img from '../assets/case4.png';
 import heroImg from '../assets/hero.png';
 
-const mockProducts = [
-  {
-    id: 1,
-    name: "Obsidian Dark Silicone",
-    base_price: "120000",
-    category: { name: "Silicone Premium" },
-    variants: [{ id: 101, model_name: "iPhone 15 Pro", color: "Dark Black", price: 120000, stock: 10 }]
-  },
-  {
-    id: 2,
-    name: "Crystal Titanium Clear",
-    base_price: "150000",
-    category: { name: "Transparent Series" },
-    variants: [{ id: 102, model_name: "iPhone 15 Pro Max", color: "Clear", price: 150000, stock: 5 }]
-  },
-  {
-    id: 3,
-    name: "Matte Black Edition",
-    base_price: "135000",
-    category: { name: "Matte Series" },
-    variants: [{ id: 103, model_name: "Samsung S24 Ultra", color: "Matte Black", price: 135000, stock: 8 }]
-  },
-  {
-    id: 4,
-    name: "Urban Leather Case",
-    base_price: "180000",
-    category: { name: "Leather Premium" },
-    variants: [{ id: 104, model_name: "iPhone 15", color: "Black", price: 180000, stock: 3 }]
-  },
-  {
-    id: 5,
-    name: "Aero Carbon Shell",
-    base_price: "160000",
-    category: { name: "Carbon Series" },
-    variants: [{ id: 105, model_name: "iPhone 15 Pro", color: "Carbon Black", price: 160000, stock: 15 }]
-  },
-  {
-    id: 6,
-    name: "Heritage Leather Cover",
-    base_price: "190000",
-    category: { name: "Leather Premium" },
-    variants: [{ id: 106, model_name: "Samsung S24 Ultra", color: "Vintage Brown", price: 190000, stock: 4 }]
-  }
-];
-
 const Home = () => {
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('http://127.0.0.1:8000/api/products/')
       .then(res => res.json())
-      .then(data => { if (data && data.length > 0) setProducts(data); })
-      .catch(() => {});
+      .then(data => { 
+        if (data && data.length > 0) setProducts(data);
+        setLoading(false);
+      })
+      .catch(() => { setLoading(false); });
   }, []);
 
-  const images = [case1Img, case2Img, case3Img, case4Img, case1Img, case2Img];
+  const localImages = [case1Img, case2Img, case3Img, case4Img, case1Img, case2Img];
 
   return (
     <PageTransition>
@@ -130,9 +89,15 @@ const Home = () => {
             </Link>
           </div>
           <div className="products-grid">
-            {products.map((product, index) => (
-              <ProductCard key={product.id} product={product} image={images[index % images.length]} />
-            ))}
+            {loading ? (
+              <p style={{textAlign: 'center', width: '100%', padding: '40px 0'}}>Cargando productos...</p>
+            ) : products.length === 0 ? (
+              <p style={{textAlign: 'center', width: '100%', padding: '40px 0'}}>No hay productos disponibles.</p>
+            ) : (
+              products.map((product, index) => (
+                <ProductCard key={product.id} product={product} image={product.image || localImages[index % localImages.length]} />
+              ))
+            )}
           </div>
         </div>
       </section>
