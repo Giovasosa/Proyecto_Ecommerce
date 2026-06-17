@@ -13,6 +13,8 @@ from .views import (
     UserDetailAPIView,
     CheckoutAPIView,
     PaymentWebhookView,
+    SalesReportAPIView,
+    StockReportAPIView,
 )
 
 # Rutas principales del backend de la tienda.
