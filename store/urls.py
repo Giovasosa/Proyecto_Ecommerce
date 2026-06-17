@@ -13,6 +13,8 @@ from .views import (
     UserDetailAPIView,
     CheckoutAPIView,
     PaymentWebhookView,
+    SalesReportAPIView,
+    # StockReportAPIView,
 )
 
 # Rutas principales del backend de la tienda.
@@ -32,5 +34,5 @@ urlpatterns = [
     path('auth/me/', UserDetailAPIView.as_view(), name='user-detail'),
     path('checkout/', CheckoutAPIView.as_view(), name='checkout'),
     path('reports/sales/', SalesReportAPIView.as_view(), name='sales-report'),
-    path('reports/stock/', StockReportAPIView.as_view(), name='stock-report'),
+    # path('reports/stock/', StockReportAPIView.as_view(), name='stock-report'),
 ]
