@@ -83,7 +83,47 @@ El servidor estará disponible en [http://127.0.0.1:8000/](http://127.0.0.1:8000
 * **[kr_cases_project](file:///c:/Users/rsosa/Desktop/luego%20eliminar/prueba_antigravity/Proyecto_Ecommerce/kr_cases_project)**: Configuración principal del proyecto Django, incluyendo variables de entorno, middleware, y mapeo de URLs globales.
 * **[store](file:///c:/Users/rsosa/Desktop/luego%20eliminar/prueba_antigravity/Proyecto_Ecommerce/store)**: Aplicación principal de la tienda.
   * `models.py`: Definición del modelo de datos (Productos, Variantes, Órdenes, Cupones, Reseñas).
-  * `views.py`: Vistas REST para el procesamiento de pagos, listado de productos, y reviews.
+  * `views.py`: Vistas REST para autenticación, catálogo, pagos, reviews, historial y reportes.
   * `serializers.py`: Serialización de datos de entrada/salida para las APIs.
+  * `permissions.py`: Reglas de acceso (admin vs lectura pública, dueño de recurso).
   * `urls.py`: Rutas secundarias para los endpoints del backend.
   * `utils.py`: Herramientas auxiliares, como la generación de facturas en PDF.
+
+---
+
+## Roadmap cubierto (Clases 1-5)
+
+### Clase 2 — APIs y catálogo
+* **Dev 1 — Autenticación**: `POST /api/auth/register/`, `POST /api/auth/login/` (JWT access + refresh),
+  `POST /api/auth/login/refresh/`, `GET /api/auth/me/`. Permisos centralizados en `store/permissions.py`
+  (`IsAdminOrReadOnly`, `IsOwnerOrAdmin`).
+* **Dev 2 — API productos**: `ProductViewSet` y `ProductVariantViewSet` ahora son CRUD completo
+  (solo admin puede escribir). Filtros: `?category=<id>&min_price=&max_price=`, búsqueda
+  `?search=texto`, orden `?ordering=base_price`.
+* **Dev 3 — Catálogo UI**: sin cambios, ya estaba implementado (Home, ProductCard, ProductDetail, carrito).
+
+### Clase 3 — Pagos y órdenes
+* **Dev 1 — Pagos**: sin cambios, ya estaba implementado (MercadoPago + webhook).
+* **Dev 2 — Órdenes**: nuevo `GET /api/orders/` (historial de compras del usuario autenticado, con
+  ítems y estado de cada pedido).
+* **Dev 3 — Checkout UI**: el carrito ahora usa los datos del usuario logueado y adjunta el token
+  para que el pedido quede asociado a su cuenta.
+
+### Clase 4 — Extras y funcionalidades avanzadas
+* **Dev 1 — Facturas y cupones**: `GET /api/orders/<id>/invoice/` genera (si hace falta) y descarga
+  el PDF de la factura (solo el dueño de la orden o un admin). `CouponViewSet` (`/api/coupons/`) para
+  gestionar cupones desde la API (antes solo se validaban dentro del checkout).
+* **Dev 2 — Reseñas y reportes**: `GET /api/reports/sales/?date_from=&date_to=` (solo admin): ingresos
+  totales, ventas por día y productos más vendidos. Panel de administración: Django Admin
+  (`/admin/`).
+* **Dev 3 — UI de detalle**: nueva página "Mis Pedidos" (`/orders`) con estado del pedido y botón de
+  descarga de factura; nueva página "Reportes de Ventas" (`/reports`, solo admin).
+
+### Clase 5 — Integración final
+* Login (`/login`) y registro (`/register`) en el frontend, con contexto de autenticación
+  (`AuthContext`) que maneja JWT y refresco automático de tokens.
+* Rutas protegidas (`ProtectedRoute`) para `/orders` (requiere login) y `/reports` (requiere admin).
+
+### Nuevas dependencias
+Se agregaron a `requirements.txt`: `djangorestframework-simplejwt` (JWT) y `django-filter`
+(filtros de catálogo). Instalalas con `pip install -r requirements.txt` después de actualizar.

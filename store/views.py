@@ -337,3 +337,18 @@ class SalesReportAPIView(APIView):
             data = qs.annotate(month=TruncMonth('created_at')).values('month').annotate(total=Sum('total_amount'), count=Count('id')).order_by('month')
 
         return Response(list(data))
+
+
+class StockReportAPIView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        data = ProductVariant.objects.select_related('product').values(
+            'product__name',
+            'color',
+            'size',
+        ).annotate(
+            stock=Sum('stock')
+        ).order_by('-stock')
+
+        return Response(list(data))

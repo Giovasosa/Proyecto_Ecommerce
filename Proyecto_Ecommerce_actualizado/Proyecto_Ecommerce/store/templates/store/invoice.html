@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura - KR Cases</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #1a1a1a;
+            font-size: 28px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .header p {
+            margin: 5px 0 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .invoice-details {
+            margin-bottom: 40px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .invoice-details td {
+            vertical-align: top;
+        }
+        .client-info h3, .order-info h3 {
+            margin-top: 0;
+            color: #444;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .order-info {
+            text-align: right;
+        }
+        table.items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        table.items th, table.items td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        table.items th {
+            background-color: #f8f9fa;
+            color: #333;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+        table.items td {
+            font-size: 14px;
+        }
+        .total-row td {
+            font-weight: bold;
+            font-size: 16px;
+            border-top: 2px solid #333;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            margin-top: 50px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>KR Cases</h1>
+        <p>Tu estilo, tu protección</p>
+    </div>
+
+    <table class="invoice-details">
+        <tr>
+            <td class="client-info" style="width: 50%;">
+                <h3>Facturar a:</h3>
+                <p>
+                    <strong>{{ order.first_name }} {{ order.last_name }}</strong><br>
+                    Email: {{ order.email }}<br>
+                    Teléfono: {{ order.phone }}<br>
+                    Dirección: {{ order.address }}
+                </p>
+            </td>
+            <td class="order-info" style="width: 50%;">
+                <h3>Detalles de Orden</h3>
+                <p>
+                    <strong>Orden #:</strong> {{ order.id }}<br>
+                    <strong>Fecha:</strong> {{ order.created_at|date:"d/m/Y H:i" }}<br>
+                    <strong>Estado:</strong> Pagado<br>
+                    <strong>Ref. Pago:</strong> {{ order.mercadopago_payment_id|default:"N/A" }}
+                </p>
+            </td>
+        </tr>
+    </table>
+
+    <table class="items">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Variante</th>
+                <th style="text-align: center;">Cantidad</th>
+                <th style="text-align: right;">Precio Unit.</th>
+                <th style="text-align: right;">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>{{ item.product_variant.product.name }}</td>
+                <td>{{ item.product_variant.model_name }} - {{ item.product_variant.color }}</td>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td style="text-align: right;">Gs. {{ item.price_at_purchase }}</td>
+                <td style="text-align: right;">Gs. {% widthratio item.quantity 1 item.price_at_purchase %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            {% if order.coupon %}
+            <tr>
+                <td colspan="4" style="text-align: right;"><strong>Descuento Aplicado ({{ order.coupon.code }}):</strong></td>
+                <td style="text-align: right;">
+                    {% if order.coupon.discount_type == 'percentage' %}
+                        -{{ order.coupon.discount_value }}%
+                    {% else %}
+                        -Gs. {{ order.coupon.discount_value }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <td colspan="4" style="text-align: right;">Total Pagado:</td>
+                <td style="text-align: right;">Gs. {{ order.total_amount }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="footer">
+        <p>¡Gracias por tu compra en KR Cases!</p>
+        <p>Si tienes alguna consulta, contáctanos en soporte@krcases.com</p>
+    </div>
+</body>
+</html>
