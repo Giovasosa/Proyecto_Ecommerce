@@ -11,9 +11,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 
+from django.http import FileResponse
+import os
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-import mercadopago
-
 from .models import Category, Product, ProductVariant, Review, Coupon, Order, OrderItem
 from .serializers import (
     CategorySerializer,
@@ -24,6 +24,7 @@ from .serializers import (
     OrderItemSerializer,
     RegisterSerializer,
     UserSerializer,
+    ChangePasswordSerializer,
 )
 
 
@@ -139,6 +140,27 @@ class UserDetailAPIView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
+    def put(self, request):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data.get("old_password")):
+                return Response({"old_password": ["Contraseña actual incorrecta."]}, status=status.HTTP_400_BAD_REQUEST)
+            user.set_password(serializer.validated_data.get("new_password"))
+            user.save()
+            return Response({"message": "Contraseña actualizada exitosamente."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CheckoutAPIView(APIView):
     permission_classes = [AllowAny]
@@ -240,78 +262,46 @@ class CheckoutAPIView(APIView):
                         print(f"Error enviando correo: {e}")
                     # ------------------------------------
 
-                    # Integración con MercadoPago (opcional)
-                    init_point = None
+                    # Generar factura PDF de forma automática al finalizar el pedido
+                    from .utils import generate_invoice_pdf
                     try:
-                        sdk = mercadopago.SDK(getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', 'TEST-TOKEN-AQUI'))
-                        preference_data = {
-                            'items': mp_items,
-                            'payer': {
-                                'name': order.first_name,
-                                'surname': order.last_name,
-                                'email': order.email,
-                            },
-                            'external_reference': str(order.id),
-                            'back_urls': {
-                                'success': 'http://localhost:5173/success',
-                                'failure': 'http://localhost:5173/failure',
-                                'pending': 'http://localhost:5173/pending',
-                            },
-                            'auto_return': 'approved',
-                        }
-                        preference_response = sdk.preference().create(preference_data)
-                        if preference_response.get('status') in (201, '201'):
-                            preference = preference_response.get('response', {})
-                            init_point = preference.get('init_point')
-                    except Exception as mp_err:
-                        print(f"MercadoPago no configurado o error: {mp_err}")
+                        generate_invoice_pdf(order)
+                    except Exception as e:
+                        print(f"Error generando PDF para la orden {order.id}: {e}")
 
                     return Response({
                         'order_id': order.id,
-                        'init_point': init_point,
                         'message': 'Pedido recibido con éxito (Pago contra entrega)'
                     }, status=status.HTTP_201_CREATED)
             except ValueError as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                return Response({'error': 'Ocurrió un error al procesar el pago', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({'error': 'Ocurrió un error al procesar el pedido', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class PaymentWebhookView(APIView):
-    permission_classes = [AllowAny]
+class DownloadInvoiceAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        topic = request.query_params.get('topic') or request.query_params.get('type')
-        payment_id = request.query_params.get('id') or request.data.get('data', {}).get('id')
-
-        if topic == 'payment' and payment_id:
-            try:
-                sdk = mercadopago.SDK(getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', 'TEST-TOKEN-AQUI'))
-                payment_info = sdk.payment().get(payment_id)
-                if payment_info.get('status') == 200:
-                    payment = payment_info.get('response', {})
-                    if payment.get('status') == 'approved':
-                        order_id = payment.get('external_reference')
-                        try:
-                            order = Order.objects.get(id=order_id)
-                            if order.status != 'PAID':
-                                order.status = 'PAID'
-                                order.mercadopago_payment_id = payment_id
-                                order.save()
-                                # Generar factura PDF (opcional)
-                                from .utils import generate_invoice_pdf
-                                try:
-                                    generate_invoice_pdf(order)
-                                except Exception as e:
-                                    print(f'Error generando PDF para la orden {order.id}: {e}')
-                        except Order.DoesNotExist:
-                            pass
-            except Exception as e:
-                print(f'Error procesando webhook: {e}')
-
-        return Response(status=status.HTTP_200_OK)
+    def get(self, request, order_id):
+        try:
+            order = Order.objects.get(id=order_id)
+            # Solo el dueño de la orden o un admin puede descargarla
+            if order.user != request.user and not request.user.is_staff:
+                return Response({'error': 'No tienes permiso para ver esta factura.'}, status=status.HTTP_403_FORBIDDEN)
+            
+            pdf_filename = f"invoice_order_{order.id}.pdf"
+            pdf_path = os.path.join(settings.MEDIA_ROOT, 'invoices', pdf_filename)
+            
+            if not os.path.exists(pdf_path):
+                # Si por alguna razon no existe, se intenta generar ahora
+                from .utils import generate_invoice_pdf
+                pdf_path = generate_invoice_pdf(order)
+                
+            return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+        except Order.DoesNotExist:
+            return Response({'error': 'Pedido no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 # Reportes simples de ventas (solo admin)

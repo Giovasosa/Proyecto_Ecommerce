@@ -8,6 +8,7 @@ import NotFound from './pages/NotFound';
 import Checkout from './pages/Checkout';
 import Auth from './pages/Auth';
 import ThankYou from './pages/ThankYou';
+import UserProfile from './pages/UserProfile';
 import FAQ from './pages/FAQ';
 import Returns from './pages/Returns';
 import Contact from './pages/Contact';
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/gracias" element={<ThankYou />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/perfil" element={<UserProfile />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/devoluciones" element={<Returns />} />
                 <Route path="/contacto" element={<Contact />} />

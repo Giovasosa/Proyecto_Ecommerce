@@ -9,7 +9,7 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const addToCart = (product, variant, quantity = 1) => {
+  const addToCart = React.useCallback((product, variant, quantity = 1) => {
     setCartItems(prev => {
       const existing = prev.find(item => item.variant.id === variant.id);
       if (existing) {
@@ -23,15 +23,19 @@ export const CartProvider = ({ children }) => {
     });
     setIsCartOpen(true);
     toast.success(`${product.name} añadido al carrito`);
-  };
+  }, []);
 
-  const removeFromCart = (variantId) => {
+  const removeFromCart = React.useCallback((variantId) => {
     setCartItems(prev => prev.filter(item => item.variant.id !== variantId));
-  };
+  }, []);
 
-  const toggleCart = () => setIsCartOpen(!isCartOpen);
+  const toggleCart = React.useCallback(() => {
+    setIsCartOpen(prev => !prev);
+  }, []);
 
-  const clearCart = () => setCartItems([]);
+  const clearCart = React.useCallback(() => {
+    setCartItems([]);
+  }, []);
 
   const cartTotal = cartItems.reduce((total, item) => total + (item.variant.price * item.quantity), 0);
   const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);

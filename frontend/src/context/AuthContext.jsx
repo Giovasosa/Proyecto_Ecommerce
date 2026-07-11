@@ -39,12 +39,16 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      console.log('Iniciando servicio de login...');
       const res = await fetch('http://127.0.0.1:8000/api/auth/login/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
+      
+      console.log(`Respuesta del servicio de login: Código ${res.status}`);
       const data = await res.json();
+      console.log('Datos recibidos del servidor:', data);
       
       if (res.ok) {
         setToken(data.access);
@@ -52,14 +56,15 @@ export const AuthProvider = ({ children }) => {
         if (data.refresh) {
           localStorage.setItem('refresh_token', data.refresh);
         }
-        toast.success(`¡Bienvenido de nuevo!`);
+        // toast.success(`¡Bienvenido de nuevo!`);
         return true;
       } else {
-        toast.error('Credenciales incorrectas');
+        // toast.error('Credenciales incorrectas');
         return false;
       }
     } catch (err) {
-      toast.error('Error de conexión');
+      console.error('Error de conexión en el login:', err);
+      // toast.error('Error de conexión');
       return false;
     }
   };
@@ -69,7 +74,7 @@ export const AuthProvider = ({ children }) => {
       const res = await fetch('http://127.0.0.1:8000/api/auth/register/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password })
+        body: JSON.stringify({ username, email, password, password2: password })
       });
       const data = await res.json();
 

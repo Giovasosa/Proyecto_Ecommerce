@@ -11,8 +11,9 @@ from .views import (
     CustomAuthToken,
     TokenRefreshAPIView,
     UserDetailAPIView,
+    ChangePasswordAPIView,
     CheckoutAPIView,
-    PaymentWebhookView,
+    DownloadInvoiceAPIView,
     SalesReportAPIView,
     StockReportAPIView,
 )
@@ -32,7 +33,8 @@ urlpatterns = [
     path('auth/login/', CustomAuthToken.as_view(), name='token_obtain_pair'),
     path('auth/refresh/', TokenRefreshAPIView.as_view(), name='token_refresh'),
     path('auth/me/', UserDetailAPIView.as_view(), name='user-detail'),
+    path('auth/password/', ChangePasswordAPIView.as_view(), name='change-password'),
     path('checkout/', CheckoutAPIView.as_view(), name='checkout'),
+    path('orders/<int:order_id>/invoice/', DownloadInvoiceAPIView.as_view(), name='download-invoice'),
     path('reports/sales/', SalesReportAPIView.as_view(), name='sales-report'),
-    # path('reports/stock/', StockReportAPIView.as_view(), name='stock-report'),
 ]

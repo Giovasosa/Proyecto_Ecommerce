@@ -24,9 +24,7 @@ const Navbar = () => {
 
   const handleUserClick = () => {
     if (user) {
-      if (window.confirm('¿Deseas cerrar sesión?')) {
-        logout();
-      }
+      navigate('/perfil');
     } else {
       navigate('/auth');
     }
